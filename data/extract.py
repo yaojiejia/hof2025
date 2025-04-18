@@ -9,7 +9,6 @@ import time
 
 dotenv.load_dotenv()
 
-
 reddit = praw.Reddit(
     client_id=os.getenv("CLIENT_ID"),
     client_secret=os.getenv("CLIENT_SECRET"),
@@ -19,7 +18,6 @@ reddit = praw.Reddit(
 def fetch_reddit_link(start_date, end_date):
     base_url = f"https://api.pullpush.io/reddit/submission/search?html_decode=True&subreddit=wallstreetbets&since={start_date}&until={end_date}&size=1000"
     perma_links = []
-    print(base_url)
     raw_reddit = requests.get(base_url)
     raw_data = raw_reddit.json()
     for data in raw_data['data']:
@@ -29,42 +27,62 @@ def fetch_reddit_link(start_date, end_date):
             perma_links.append(full_url)
 
     return perma_links
-    
+
+def format_date(dt):
+    return dt.strftime('%d-%m-%Y')
+
 def extract_reddit(submission_url):
-    submission = reddit.submission(url=submission_url)
+    try:
+        submission = reddit.submission(url=submission_url)
+        submission.comments.replace_more(limit=None)
+        all_comments = submission.comments.list()
 
-    submission.comments.replace_more(limit=None)
+        created_post_time = datetime.datetime.fromtimestamp(submission.created_utc, datetime.timezone.utc)
+        
 
-    all_comments = submission.comments.list()
+        status = analyze.analyze_reddit_post(submission.title + submission.selftext)
+    
 
-    print("\nSubmission Details:")
-    print("Title:", submission.title)
-    print("Post Content:", submission.selftext)  
-    created_post_time = datetime.datetime.fromtimestamp(submission.created_utc, datetime.timezone.utc)
-    print("Posted at:", created_post_time)
-    print("Score:", submission.score)
+        for comment in all_comments:
+            created_at = datetime.datetime.fromtimestamp(comment.created_utc, datetime.timezone.utc)
+            post_date = format_date(created_post_time)
+            comment_date = format_date(created_at)
+            if post_date != comment_date:
+                continue 
+            status = analyze.analyze_reddit_post(comment.body)
+            sector = status["sector"]
+            stock_ticker = status["stock_ticker"]
+            sentiment = status["sentiment_score"]
 
-    status = analyze.analyze_reddit_post(submission.title + submission.selftext)
-    print(status)
-    for comment in all_comments:
+            js = {
+                "Comment": comment.body,
+                "Score": comment.score,
+                "Time": str(created_at),
+                "sector": sector,
+                "stock_ticker": stock_ticker,
+                "sentiment_score": sentiment
+            }
+            print(json.dumps(js))
+    except Exception as e:
+        print(f"[-] Error processing {submission_url}: {e}")
 
-        status = analyze.analyze_reddit_post(comment.body)
-        print(status)
-        sector = status["sector"]
-        stock_ticker = status["stock_ticker"]
-        sentiment = status["sentiment"]
-        print(sector)
-        print(stock_ticker)
-        print(sentiment)
-        created_at = datetime.datetime.fromtimestamp(comment.created_utc, datetime.timezone.utc)
-        js = {"Comment": comment.body, "Score": comment.score, "Time": str(created_at), "sector": sector, "stock_ticker": stock_ticker, "sentiment": sentiment}
-        json_dict = json.dumps(js)
-        print(json_dict)
+# Main loop: 3 years of data, day by day
+end_date = datetime.datetime.now(datetime.timezone.utc)
+start_date = end_date - datetime.timedelta(days=3 * 365)
 
-#extract_reddit("https://www.reddit.com/r/wallstreetbets/comments/1k1pew7/china_is_going_to_meet_with_us_soon/")
+current_date = start_date
+one_day = datetime.timedelta(days=1)
 
-# links = fetch_reddit_link("1577854800", "1577941200")
-# for link in links:
-#     extract_reddit(link)
+while current_date < end_date:
+    since = int(current_date.timestamp())
+    until = int((current_date + one_day).timestamp())
 
-print(analyze.analyze_reddit_post("What happens when Trump eventually fires/replaces Powell? "))
+    try:
+        links = fetch_reddit_link(since, until)
+        for link in links:
+            extract_reddit(link)
+    except Exception as e:
+        print(f"[-] Error fetching or extracting posts from {current_date.date()}: {e}")
+    
+    current_date += one_day
+    time.sleep(1)  # Avoid hitting rate limits
