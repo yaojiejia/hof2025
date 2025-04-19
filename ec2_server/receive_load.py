@@ -51,7 +51,7 @@ def get_historic_data():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    query = "SELECT * FROM reddit_comments"
+    query = "SELECT * FROM reddit_comments ORDER BY time"
     cur.execute(query)
     rows = cur.fetchall()
 
