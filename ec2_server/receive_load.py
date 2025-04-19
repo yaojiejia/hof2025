@@ -74,34 +74,34 @@ def get_historic_data():
 
     return jsonify(data)
 
-@app.route('/predict_today', methods=['GET'])
-def predict_today():
-    conn = get_db_connection()
-    cur = conn.cursor()
+# @app.route('/predict_today', methods=['GET'])
+# def predict_today():
+#     conn = get_db_connection()
+#     cur = conn.cursor()
 
-    query = """
-        SELECT
-            SUM(score) AS total_score,
-            AVG(sentiment_score) AS avg_sentiment
-        FROM reddit_comments
-        WHERE time::date = CURRENT_DATE - INTERVAL '1 day';
-    """
-    cur.execute(query)
-    result = cur.fetchone()
-    cur.close()
-    conn.close()
+#     query = """
+#         SELECT
+#             SUM(score) AS total_score,
+#             AVG(sentiment_score) AS avg_sentiment
+#         FROM reddit_comments
+#         WHERE time::date = CURRENT_DATE - INTERVAL '1 day';
+#     """
+#     cur.execute(query)
+#     result = cur.fetchone()
+#     cur.close()
+#     conn.close()
 
-    total_score = result[0] or 0
-    avg_sentiment = float(result[1]) if result[1] is not None else 0
+#     total_score = result[0] or 0
+#     avg_sentiment = float(result[1]) if result[1] is not None else 0
 
-    x_new = [[total_score, avg_sentiment]]
-    prediction = model.predict(x_new)[0]
+#     x_new = [[total_score, avg_sentiment]]
+#     prediction = model.predict(x_new)[0]
 
-    return jsonify({
-        "total_score": total_score,
-        "avg_sentiment": avg_sentiment,
-        "prediction": float(prediction)
-    })
+#     return jsonify({
+#         "total_score": total_score,
+#         "avg_sentiment": avg_sentiment,
+#         "prediction": float(prediction)
+#     })
 
 
 @app.route('/predict_ticker', methods=['GET'])
@@ -149,9 +149,6 @@ def predict_ticker():
 
 
 
-# @app.route('/predict_ticker', methods=['GET'])
-# def get_ticker():
-#      pass
 @app.route('/get_overall_ticker', methods=['GET'])
 def get_overall_ticker():
     ticker_symbol = request.args.get('ticker')
@@ -316,6 +313,77 @@ def market_summary():
             "score": top_lose_stock[2],
             "avg_sentiment": top_lose_stock[3]
         } if top_lose_stock else None,
+    })
+
+@app.route('/predict_ticker_price', methods=['GET'])
+def predict_ticker_price():
+    ticker_param = request.args.get("ticker")
+
+    if not ticker_param:
+        return jsonify({"error": "Please provide a ticker. Example: /predict_ticker_price?ticker=AAPL"}), 400
+
+    ticker_upper = ticker_param.upper()
+
+    # 1. Get Reddit sentiment summary from DB
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT SUM(score), AVG(sentiment_score)
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+          AND stock_ticker = %s
+    """, (ticker_upper,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    total_score = result[0]
+    avg_sentiment = result[1]
+
+    if total_score is None or avg_sentiment is None:
+        return jsonify({
+            "ticker": ticker_upper,
+            "message": "No Reddit sentiment data available for this ticker yesterday"
+        }), 200
+
+    # 2. Predict next-day price movement using your model
+    x_new = [[total_score, avg_sentiment]]
+    predicted_change = float(model.predict(x_new)[0])
+
+    # 3. Fetch past 4 days of actual prices using yfinance
+    try:
+        ticker = yf.Ticker(ticker_upper)
+        end = datetime.today()
+        start = end - timedelta(days=7)
+        hist = ticker.history(start=start, end=end)
+
+        last_4_closes = hist["Close"].tail(4)
+        price_dict = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in last_4_closes.items()}
+
+        if last_4_closes.empty:
+            return jsonify({
+                "ticker": ticker_upper,
+                "message": "Could not fetch historical prices"
+            }), 500
+
+        latest_price = float(last_4_closes.iloc[-1])
+        expected_price = round(latest_price + predicted_change, 2)
+        percent_change = round((predicted_change / latest_price) * 100, 4)
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch market data: {str(e)}"}), 500
+
+    # 4. Return combined result
+    return jsonify({
+        "ticker": ticker_upper,
+        "last_4_days_closing": price_dict,
+        "latest_closing_price": round(latest_price, 2),
+        "predicted_change": round(predicted_change, 4),
+        "expected_next_day_price": expected_price,
+        "percent_change_prediction": percent_change,
+        "total_score": total_score,
+        "avg_sentiment": float(avg_sentiment)
     })
 
 
