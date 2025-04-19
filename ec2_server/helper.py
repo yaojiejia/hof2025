@@ -3,6 +3,22 @@ from datetime import datetime, timedelta
 from dateutil import parser as dateparser
 import time
 import pandas as pd
+import psycopg2
+import os 
+import dotenv
+
+dotenv.load_dotenv()
+
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        dbname=os.getenv("DB_NAME"),
+        user="postgres",
+        password=os.getenv("DB_PASSWORD")
+    )
+
+
 def get_prices_around_time(comment_time_raw):
     time.sleep(1)
     try:
@@ -12,7 +28,7 @@ def get_prices_around_time(comment_time_raw):
         else:
             comment_time = comment_time_raw
 
-        ticker = yf.Ticker("QQQ")  # Or use "^IXIC"
+        ticker = yf.Ticker("QQQ") 
         history = ticker.history(
             start=comment_time - timedelta(days=3),
             end=comment_time + timedelta(days=3)
@@ -58,3 +74,19 @@ def get_qqq():
 
     # Save to CSV
     hist.to_csv("qqq_1y_history.csv")
+
+def get_today_data():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT * 
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE;
+
+    """
+    cur.execute(query)
+
+    rows = cur.fetchall()
+    
+
