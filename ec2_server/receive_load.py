@@ -223,10 +223,12 @@ def predict_sector():
 
 @app.route('/market_summary', methods=['GET'])
 def market_summary():
+    import yfinance as yf
+
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # 1. Overall state (QQQ)
+    # 1. Overall market state prediction (QQQ)
     cur.execute("""
         SELECT SUM(score), AVG(sentiment_score)
         FROM reddit_comments
@@ -237,11 +239,12 @@ def market_summary():
     qqq_sent = float(result[1]) if result[1] is not None else 0
     qqq_pred = float(model.predict([[qqq_score, qqq_sent]])[0])
 
-    # 2. Top sector (based on ML prediction)
+    # 2. Top sector predictions (excluding 'N/A')
     cur.execute("""
         SELECT sector, SUM(score) AS total_score, AVG(sentiment_score) AS avg_sent
         FROM reddit_comments
         WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+          AND sector IS NOT NULL AND sector != 'N/A'
         GROUP BY sector
     """)
     sectors = cur.fetchall()
@@ -254,11 +257,12 @@ def market_summary():
     top_gain_sec = max(sector_preds, key=lambda x: x[1], default=None)
     top_lose_sec = min(sector_preds, key=lambda x: x[1], default=None)
 
-    # 3. Top stock (based on ML prediction)
+    # 3. Top stock predictions (excluding 'N/A')
     cur.execute("""
         SELECT stock_ticker, SUM(score) AS total_score, AVG(sentiment_score) AS avg_sent
         FROM reddit_comments
         WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+          AND stock_ticker IS NOT NULL AND stock_ticker != 'N/A'
         GROUP BY stock_ticker
     """)
     stocks = cur.fetchall()
@@ -271,11 +275,23 @@ def market_summary():
     top_gain_stock = max(stock_preds, key=lambda x: x[1], default=None)
     top_lose_stock = min(stock_preds, key=lambda x: x[1], default=None)
 
+    # 4. Get today's actual QQQ price and compute % diff
+    try:
+        qqq_data = yf.Ticker("QQQ").history(period="1d")
+        actual_price = float(qqq_data["Close"].iloc[-1])
+        percent_change = ((qqq_pred - actual_price) / actual_price) * 100
+    except Exception as e:
+        print(f"[!] Failed to fetch QQQ price: {e}")
+        actual_price = None
+        percent_change = None
+
     cur.close()
     conn.close()
 
     return jsonify({
         "state": qqq_pred,
+        "actual_qqq_price": actual_price,
+        "percent_change_vs_actual": round(percent_change, 4) if percent_change is not None else None,
         "top_gain_sec": {
             "sector": top_gain_sec[0],
             "prediction": top_gain_sec[1],
@@ -301,7 +317,6 @@ def market_summary():
             "avg_sentiment": top_lose_stock[3]
         } if top_lose_stock else None,
     })
-
 
 
 if __name__ == '__main__':
