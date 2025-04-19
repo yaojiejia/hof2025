@@ -21,7 +21,7 @@ export default function Home() {
         { homeData.marketSummary.map(({ name, value }: {name: string; value: string;}) => {
           return <div className="market-entry">
             <p> {name} </p>
-            <p> {value} </p>
+            <h2> {value} </h2>
           </div>
         }) }
       </div>

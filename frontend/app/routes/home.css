@@ -27,3 +27,16 @@ body {
     border-radius: 0.5rem;
     width: 90%;
 }
+
+.market-entry {
+    padding: 0.5rem;
+}
+
+.market-entry > p {
+    color: #E2E2E2;
+    font-size: 0.85rem;
+}
+.market-entry > h2 {
+    color: white;
+    font-size: 1.2rem;
+}
