@@ -16,6 +16,10 @@ export async function loader({ params }: Route.LoaderArgs) {
         const lastClosingEntry = Object.entries(data.last_4_days_closing).at(-1); // Use .at(-1) for the last element
         const [lastDate, lastPrice] = lastClosingEntry || []; // Destructure the date and price
 
+        const nextDate = new Date(lastDate)
+        nextDate.setDate(nextDate.getDate() + 1)
+        const nextDateString = nextDate.toISOString().split("T")[0]
+
         const res = {
             name: data.company_name,
             id: data.ticker,
@@ -28,10 +32,10 @@ export async function loader({ params }: Route.LoaderArgs) {
             market_sentiment: data.avg_sentiment,
             graph: {
                 historical_data: Object.entries(data.last_4_days_closing).map(([date, price]) => ({
-                    x: date,
-                    y: price,
+                    date: date,
+                    close: price,
                 })),
-                predicted_data: [{ x: "Next Day", y: data.expected_next_day_price }],
+                predicted_data: [{ date: nextDateString, close: data.expected_next_day_price, predicted: true }],
             },
         };
         
@@ -72,7 +76,7 @@ export default function Stock({ loaderData }: Route.ComponentProps) {
             </div>
             <div className="pt-20">
                 <Card className="">
-                    <Graph></Graph>
+                    <Graph data={data.graph.historical_data} />
                 </Card>
             </div>
         </div>
