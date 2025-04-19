@@ -74,13 +74,11 @@ export default function Stock({ loaderData }: ComponentProps) {
   const data = loaderData;
   return (
     <>
-      <div className="flex ml-5">
-        <div>
-          <strong>{data.name}</strong> {data.id.toUpperCase()}
-        </div>
+      <div className="cards-container">
+        <strong>{data.name}</strong> {data.id.toUpperCase()}
       </div>
-      <div>
-        <div className="pt-6 flex justify-around gap-5">
+      <div className="cards-container">
+        <div className="pt-6 flex justify-between gap-5">
           <Card className="w-60 h-20">
             <p className="text-sm">Current Price</p>
             <div>
