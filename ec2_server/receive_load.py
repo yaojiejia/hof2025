@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import psycopg2
 import os
 import dotenv
-
+import helper
 dotenv.load_dotenv()
 
 app = Flask(__name__)
@@ -54,15 +54,21 @@ def get_historic_data():
     query = "SELECT * FROM reddit_comments ORDER BY time"
     cur.execute(query)
     rows = cur.fetchall()
-
     colnames = [desc[0] for desc in cur.description]
 
-    data = [dict(zip(colnames, row)) for row in rows]
+    data = []
+    for row in rows:
+        row_dict = dict(zip(colnames, row))
+        before_price, after_price = helper.get_prices_around_time(row_dict["time"])
+        row_dict["before_price"] = before_price
+        row_dict["after_price"] = after_price
+        data.append(row_dict)
 
     cur.close()
     conn.close()
 
     return jsonify(data)
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
