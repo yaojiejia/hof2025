@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 
 const mockData = {
@@ -31,10 +31,29 @@ const mockData = {
 
 const Heatmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [ windowChanged, setWindowChanged ] = useState(0);
 
+  // on browser resize: rerun heatmap dimensions useEffect
   useEffect(() => {
-    const width = 960;
-    const height = 600;
+    const handleResize = () => {
+      setWindowChanged( (windowChanged) => windowChanged + 1 );
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // build heatmap dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // calculate heatmap container's width & height (absolute px)
+    const parentElement = containerRef.current.parentElement;
+    if (!parentElement) return;
+    const width = parentElement.getBoundingClientRect().width - 40;
+    const height = width * 0.6;
 
     const color = d3.scaleLinear<string>()
       .domain([-5, 0, 5])
@@ -101,7 +120,7 @@ const Heatmap = () => {
       .style('font-size', '12px')
       .classed('flex justify-center items-center', true)
       .text(d => `${d.data.name} (${d.data.change}%)`);
-  }, []);
+  }, [windowChanged]);
 
   return <div ref={containerRef} />;
 };
