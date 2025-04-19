@@ -324,12 +324,15 @@ def predict_ticker_price():
     x_new = [[total_score, avg_sentiment]]
     predicted_change = float(model.predict(x_new)[0])
 
-    # 3. Get last 4 closing prices
+    # 3. Get last 4 closing prices + company name
     try:
-        ticker = yf.Ticker(ticker_upper)
+        ticker_obj = yf.Ticker(ticker_upper)
+        info = ticker_obj.info
+        company_name = info.get("shortName", "Unknown Company")
+
         end = datetime.today()
         start = end - timedelta(days=7)
-        hist = ticker.history(start=start, end=end)
+        hist = ticker_obj.history(start=start, end=end)
         closes = hist["Close"].tail(4)
 
         if closes.empty:
@@ -342,15 +345,16 @@ def predict_ticker_price():
     except Exception as e:
         return jsonify({"error": f"Failed to fetch market data: {str(e)}"}), 500
 
-    # 4. Minimal response
+    # 4. Response
     return jsonify({
+        "ticker": ticker_upper,
+        "company_name": company_name,
         "last_4_days_closing": price_dict,
         "expected_next_day_price": expected_price
     })
 
 @app.route('/predict_market_price', methods=['GET'])
 def predict_market_price():
-    import yfinance as yf
 
     # 1. Get overall Reddit sentiment
     conn = get_db_connection()
