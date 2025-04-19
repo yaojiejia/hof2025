@@ -59,7 +59,7 @@ def get_historic_data():
     data = []
     for row in rows:
         row_dict = dict(zip(colnames, row))
-        before_price, after_price = helper.get_prices_around_time(row_dict["time"])
+        before_price, after_price = helper.get_cached_prices(row_dict["time"])
         row_dict["before_price"] = before_price
         row_dict["after_price"] = after_price
         data.append(row_dict)
