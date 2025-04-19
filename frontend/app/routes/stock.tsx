@@ -62,7 +62,6 @@ export async function loader({ params }: LoaderArgs) {
       historical_data: historical_data,
       full_graph: full_graph
     };
-    console.log(res)
     return res
   } catch (error) {
     console.error(error)
@@ -73,12 +72,13 @@ export async function loader({ params }: LoaderArgs) {
 export default function Stock({ loaderData }: ComponentProps) {
   const data = loaderData;
   return (
-    <>
+    <div className="flex justify-center">
+    <div className="w-9/10 ">
       <div className="cards-container">
         <strong>{data.name}</strong> {data.id.toUpperCase()}
       </div>
       <div className="cards-container">
-        <div className="pt-6 flex justify-between gap-5">
+        <div className="pt-6 flex justify-center gap-70">
           <Card className="w-60 h-20">
             <p className="text-sm">Current Price</p>
             <div>
@@ -101,7 +101,8 @@ export default function Stock({ loaderData }: ComponentProps) {
             </Card>
         </div>
       </div>
-    </>
+    </div>
+    </div>
   )
 }
 
