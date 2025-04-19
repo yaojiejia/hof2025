@@ -13,3 +13,12 @@ body {
     color-scheme: dark;
   }
 }
+
+@font-face {
+  font-family: "Inter";
+  src: url("./Inter-Light.ttf");
+}
+
+* {
+  font-family: 'Inter', sans-serif;
+}
