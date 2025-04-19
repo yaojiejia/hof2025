@@ -111,7 +111,7 @@ const Heatmap = () => {
       .style('top', d => `${d.y0 - d.parent!.y0}px`) // Relative to the sector
       .style('width', d => `${d.x1 - d.x0}px`)
       .style('height', d => `${d.y1 - d.y0}px`)
-      .style('background', d => color(d.data.change))
+      .style('background', d => getColor(d.data.change))
       .style('box-sizing', 'border-box')
       .style('overflow', 'hidden')
       .style('color', 'white')
@@ -122,5 +122,13 @@ const Heatmap = () => {
 
   return <div ref={containerRef} />;
 };
+
+function getColor(change: number) {
+  const opacity = Math.abs(change) / 9;
+  
+  if (change > 0) return `rgba(106, 206, 98, ${opacity})`;
+  if (change < 0) return `rgba(247, 66, 75, ${opacity})`;
+  return 'black';
+}
 
 export default Heatmap;
