@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import './Heatmap.css';
+import Tooltip from './Tooltip';
 
 const mockData = {
   name: 'Market',
@@ -33,6 +34,10 @@ const mockData = {
 const Heatmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [ windowChanged, setWindowChanged ] = useState(0);
+
+  // tooltip state
+  const [ tooltipVisible, setTooltipVisible ] = useState(false);
+  const [ tooltipContent, setTooltipContent ] = useState(<p> Tooltip Content </p>);
 
   // on browser resize: rerun heatmap dimensions useEffect
   useEffect(() => {
@@ -117,10 +122,20 @@ const Heatmap = () => {
       .style('color', 'white')
       .style('font-size', '12px')
       .classed('flex justify-center items-center', true)
-      .text(d => `${d.data.name} (${d.data.change}%)`);
+      .text(d => `${d.data.name} (${d.data.change}%)`)
+      .on('mouseenter', (event, d) => {
+        setTooltipContent(<p> {d.data.name}: {d.data.change}%</p>);
+        setTooltipVisible(true);
+      })
+      .on('mouseleave', () => {
+        setTooltipVisible(false);
+      });
   }, [windowChanged]);
 
-  return <div ref={containerRef} />;
+  return <div>
+    <div ref={containerRef} />
+    <Tooltip visible={tooltipVisible} content={tooltipContent} />
+  </div>;
 };
 
 function getColor(change: number) {
