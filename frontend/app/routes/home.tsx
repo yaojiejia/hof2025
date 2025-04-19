@@ -18,6 +18,12 @@ export default function Home() {
     </div>
     <div className="home-section">
       <div className="market-entries">
+        { homeData.marketSummary.map(({ name, value }: {name: string; value: string;}) => {
+          return <div className="market-entry">
+            <p> {name} </p>
+            <p> {value} </p>
+          </div>
+        }) }
       </div>
     </div>
   </div>;

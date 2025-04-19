@@ -3,11 +3,26 @@ File for providing hardcoded data for home.tsx
 */
 
 export const homeData = {
-    marketSummary: {
-        marketState: "Bullish",
-        topGainingSector: "Healthcare",
-        topLosingSector: "Technology",
-        topGainingStock: "Netflix",
-        topLosingStock: "NVIDIA"
-    }
+    marketSummary: [
+        {
+            name: "Market State",
+            value: "Bullish"
+        },
+        {
+            name: "Top Gaining Sector",
+            value: "Healthcare"
+        },
+        {
+            name: "Top Losing Sector",
+            value: "Technology"
+        },
+        {
+            name: "Top Gaining Stock",
+            value: "Netflix"
+        },
+        {
+            name: "Top Losing Stock",
+            value: "NVIDIA"
+        }
+    ]
 }
