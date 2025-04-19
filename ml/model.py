@@ -3,6 +3,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
+df = pd.read_csv("cleanedData.csv")
 
 X = df[['score', 'sentiment_score']]
 y = df['change']
@@ -23,11 +24,7 @@ model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
-print(f"Test MSE: {mse:.4f}")
 
-import matplotlib.pyplot as plt
+import joblib
 
-plt.bar(X.columns, model.feature_importances_)
-plt.ylabel("Importance")
-plt.title("Feature Importances in GBT")
-plt.show()
+joblib.dump(model, 'gbt_model.pkl')
