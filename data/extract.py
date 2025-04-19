@@ -1,9 +1,9 @@
-import praw 
+import praw
 import datetime
-import dotenv 
-import os 
+import dotenv
+import os
 import analyze
-import json 
+import json
 import requests
 import time
 
@@ -15,17 +15,24 @@ reddit = praw.Reddit(
     user_agent=os.getenv("USER_AGENT")
 )
 
-def fetch_reddit_link(start_date, end_date):
-    base_url = f"https://api.pullpush.io/reddit/submission/search?html_decode=True&subreddit=wallstreetbets&since={start_date}&until={end_date}&size=1000"
-    perma_links = []
-    raw_reddit = requests.get(base_url)
-    raw_data = raw_reddit.json()
-    for data in raw_data['data']:
-        permalink = data.get("permalink")
-        if permalink:
-            full_url = f"https://www.reddit.com{permalink}"
-            perma_links.append(full_url)
+API_ENDPOINT = "http://3.145.78.241:5000/submit"
 
+def fetch_reddit_link(start_date, end_date):
+    base_url = (
+        f"https://api.pullpush.io/reddit/submission/search"
+        f"?html_decode=True&subreddit=wallstreetbets"
+        f"&since={start_date}&until={end_date}&size=1000"
+    )
+    perma_links = []
+    try:
+        response = requests.get(base_url)
+        raw_data = response.json()
+        for data in raw_data.get('data', []):
+            permalink = data.get("permalink")
+            if permalink:
+                perma_links.append(f"https://www.reddit.com{permalink}")
+    except Exception as e:
+        print(f"[-] Failed to fetch reddit links: {e}")
     return perma_links
 
 def format_date(dt):
@@ -37,18 +44,19 @@ def extract_reddit(submission_url):
         submission.comments.replace_more(limit=None)
         all_comments = submission.comments.list()
 
-        created_post_time = datetime.datetime.fromtimestamp(submission.created_utc, datetime.timezone.utc)
-        
+        created_post_time = datetime.datetime.fromtimestamp(
+            submission.created_utc, datetime.timezone.utc
+        )
+        post_date = format_date(created_post_time)
 
-        status = analyze.analyze_reddit_post(submission.title + submission.selftext)
-    
+        _ = analyze.analyze_reddit_post(submission.title + submission.selftext)
 
         for comment in all_comments:
             created_at = datetime.datetime.fromtimestamp(comment.created_utc, datetime.timezone.utc)
-            post_date = format_date(created_post_time)
             comment_date = format_date(created_at)
             if post_date != comment_date:
-                continue 
+                continue
+
             status = analyze.analyze_reddit_post(comment.body)
             sector = status["sector"]
             stock_ticker = status["stock_ticker"]
@@ -62,7 +70,20 @@ def extract_reddit(submission_url):
                 "stock_ticker": stock_ticker,
                 "sentiment_score": sentiment
             }
-            print(json.dumps(js))
+
+            # Print comment and extracted data
+            print("\n--- Reddit Comment ---")
+            print("Comment:", comment.body)
+            print("Score:", comment.score)
+            print("Time:", created_at)
+            print("Sector:", sector)
+            print("Stock Ticker:", stock_ticker)
+            print("Sentiment Score:", sentiment)
+
+            # Send to Flask API
+            res = requests.post(API_ENDPOINT, json=js)
+            print(f"POST {res.status_code}: {res.text}")
+
     except Exception as e:
         print(f"[-] Error processing {submission_url}: {e}")
 
@@ -85,4 +106,3 @@ while current_date < end_date:
         print(f"[-] Error fetching or extracting posts from {current_date.date()}: {e}")
     
     current_date += one_day
-    time.sleep(1)  # Avoid hitting rate limits

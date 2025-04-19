@@ -5,16 +5,15 @@ import dotenv
 
 dotenv.load_dotenv()
 
-
 app = Flask(__name__)
 
 # Setup DB connection
 def get_db_connection():
     return psycopg2.connect(
-        host= os.getenv("DB_HOST"),
-        dbname= os.getenv("DB_NAME"),
+        host=os.getenv("DB_HOST"),
+        dbname=os.getenv("DB_NAME"),
         user="postgres",
-        password= os.getenv("DB_PASSWORD")
+        password=os.getenv("DB_PASSWORD")
     )
 
 @app.route('/submit', methods=['POST'])
@@ -22,6 +21,7 @@ def submit_data():
     try:
         data = request.get_json()
 
+        comment = data.get("Comment")
         score = data.get("Score")
         time = data.get("Time")
         sector = data.get("sector")
@@ -32,10 +32,10 @@ def submit_data():
         cur = conn.cursor()
 
         insert_query = """
-            INSERT INTO reddit_comments (score, time, sector, stock_ticker, sentiment_score)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO reddit_comments (comment, score, time, sector, stock_ticker, sentiment_score)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cur.execute(insert_query, (score, time, sector, stock_ticker, sentiment_score))
+        cur.execute(insert_query, (comment, score, time, sector, stock_ticker, sentiment_score))
         conn.commit()
 
         cur.close()
@@ -48,4 +48,3 @@ def submit_data():
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
-
