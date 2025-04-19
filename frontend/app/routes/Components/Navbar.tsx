@@ -17,7 +17,7 @@ export default function Navbar() {
 
     return (
         <div className="navbar">
-            <button className="navbar-button home-button hover:bg-[#0000004D]" onClick={() => navigate("/")}>Home</button>
+            <button className="navbar-button home-button hover:bg-[#2c2c2c]" onClick={() => navigate("/")}>Home</button>
             
             <form action="" onSubmit={handleSubmit}>
                 <div className="relative">
