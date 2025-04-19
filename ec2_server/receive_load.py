@@ -277,7 +277,7 @@ def market_summary():
         qqq_data = yf.Ticker("QQQ").history(period="1d")
         actual_price = float(qqq_data["Close"].iloc[-1])
         expected_price = actual_price + qqq_pred
-        percent_change = (expected_price / actual_price) * 100
+        percent_change = (expected_price / actual_price)
     except Exception as e:
         print(f"[!] Failed to fetch QQQ price: {e}")
         actual_price = None
