@@ -2,3 +2,34 @@ body {
     background-color: #151515;
     min-height: 100vh;
 }
+
+.home {
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-title {
+    margin-top: 1.8rem;
+    margin-bottom: 0.8rem;
+    width: 90%;
+    padding-left: 0.7rem;
+}
+.home-title > h1 {
+    font-size: 1.3rem;
+}
+
+.market-entry {
+    padding: 0.5rem;
+}
+
+.market-entry > p {
+    color: #E2E2E2;
+    font-size: 0.85rem;
+}
+.market-entry > h2 {
+    color: white;
+    font-size: 1.2rem;
+}
