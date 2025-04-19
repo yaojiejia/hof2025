@@ -84,7 +84,7 @@ def predict_today():
             SUM(score) AS total_score,
             AVG(sentiment_score) AS avg_sentiment
         FROM reddit_comments
-        WHERE time::date = CURRENT_DATE;
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day';
     """
     cur.execute(query)
     result = cur.fetchone()
@@ -120,7 +120,8 @@ def predict_ticker():
             SUM(score) AS total_score,
             AVG(sentiment_score) AS avg_sentiment
         FROM reddit_comments
-        WHERE time::date = CURRENT_DATE AND stock_ticker = %s;
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+          AND stock_ticker = %s;
     """
     cur.execute(query, (ticker_param.upper(),))
     result = cur.fetchone()
