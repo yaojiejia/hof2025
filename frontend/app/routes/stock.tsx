@@ -14,9 +14,7 @@ export default function Stock({ loaderData }: Route.ComponentProps) {
         <div>
             hi 
             {id}
-            <Card>Content
-            <Heatmap />
-
+            <Card>
             </Card>
         </div>
     )
