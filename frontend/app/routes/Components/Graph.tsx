@@ -94,4 +94,13 @@
 //     return <svg ref={ref} width={500} height={300}></svg>;
 //   };
 
-//   export default Graph;
+
+function Graph() {
+    return (
+        <>
+        graph lol
+        </>
+    )
+}
+
+  export default Graph;
