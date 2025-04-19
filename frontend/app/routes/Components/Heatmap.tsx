@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
+import './Heatmap.css';
 
 const mockData = {
   name: 'Market',
@@ -95,11 +96,11 @@ const Heatmap = () => {
     sectors
       .append('div')
       .classed('sector-label', true)
-      .style('padding', '4px')
+      .style('padding', '12px')
       .style('font-weight', 'bold')
       .style('font-size', '14px')
       .style('color', 'white')
-      .style('background-color', '#444') // Darker background for labels
+      .style('background-color', 'transparent') // Darker background for labels
       .text(d => d.data.name);
 
     // Add stock nodes within each sector

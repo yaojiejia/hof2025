@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+.sector-label {
+    z-index: 1;
+    background-color: transparent;
+}
