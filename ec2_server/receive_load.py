@@ -149,31 +149,6 @@ def predict_ticker():
 
 
 
-@app.route('/get_overall_ticker', methods=['GET'])
-def get_overall_ticker():
-    ticker_symbol = request.args.get('ticker')
-
-    if not ticker_symbol:
-        return jsonify({"error": "Ticker symbol is required. Example: /get_overall_ticker?ticker=AAPL"}), 400
-
-    try:
-        ticker = yf.Ticker(ticker_symbol.upper())
-        end = datetime.today()
-        start = end - timedelta(days=7)  # buffer for weekends
-
-        hist = ticker.history(start=start, end=end)
-        closes = hist["Close"].tail(4)
-
-        # Convert to dict with dates as string
-        result = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in closes.items()}
-
-        return jsonify({
-            "ticker": ticker_symbol.upper(),
-            "last_4_days_closing": result
-        })
-    except Exception as e:
-        return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
-
 
 @app.route('/predict_sector', methods=['GET'])
 def predict_sector():
@@ -373,6 +348,57 @@ def predict_ticker_price():
         "expected_next_day_price": expected_price
     })
 
+@app.route('/predict_market_price', methods=['GET'])
+def predict_market_price():
+    import yfinance as yf
+
+    # 1. Get overall Reddit sentiment
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT SUM(score), AVG(sentiment_score)
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+    """)
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    total_score = result[0]
+    avg_sentiment = result[1]
+
+    if total_score is None or avg_sentiment is None:
+        return jsonify({
+            "message": "No overall Reddit sentiment data available for yesterday"
+        }), 200
+
+    # 2. Predict QQQ price change
+    x_new = [[total_score, avg_sentiment]]
+    predicted_change = float(model.predict(x_new)[0])
+
+    # 3. Get QQQ closing prices from yfinance
+    try:
+        qqq = yf.Ticker("QQQ")
+        end = datetime.today()
+        start = end - timedelta(days=7)
+        hist = qqq.history(start=start, end=end)
+        closes = hist["Close"].tail(4)
+
+        if closes.empty:
+            return jsonify({"message": "Could not fetch QQQ prices"}), 500
+
+        price_dict = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in closes.items()}
+        latest_price = float(closes.iloc[-1])
+        expected_price = round(latest_price + predicted_change, 2)
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch QQQ price: {str(e)}"}), 500
+
+    # 4. Final response
+    return jsonify({
+        "last_4_days_closing": price_dict,
+        "expected_next_day_price": expected_price
+    })
 
 
 if __name__ == '__main__':
