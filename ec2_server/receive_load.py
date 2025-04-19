@@ -221,6 +221,89 @@ def predict_sector():
         "prediction": float(prediction)
     })
 
+@app.route('/market_summary', methods=['GET'])
+def market_summary():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 1. Overall state (QQQ)
+    cur.execute("""
+        SELECT SUM(score), AVG(sentiment_score)
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+    """)
+    result = cur.fetchone()
+    qqq_score = result[0] or 0
+    qqq_sent = float(result[1]) if result[1] is not None else 0
+    qqq_pred = float(model.predict([[qqq_score, qqq_sent]])[0])
+
+    # 2. Top sector (based on ML prediction)
+    cur.execute("""
+        SELECT sector, SUM(score) AS total_score, AVG(sentiment_score) AS avg_sent
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+        GROUP BY sector
+    """)
+    sectors = cur.fetchall()
+    sector_preds = []
+    for sector, total_score, avg_sent in sectors:
+        if total_score is not None and avg_sent is not None:
+            pred = float(model.predict([[total_score, avg_sent]])[0])
+            sector_preds.append((sector, pred, total_score, avg_sent))
+
+    top_gain_sec = max(sector_preds, key=lambda x: x[1], default=None)
+    top_lose_sec = min(sector_preds, key=lambda x: x[1], default=None)
+
+    # 3. Top stock (based on ML prediction)
+    cur.execute("""
+        SELECT stock_ticker, SUM(score) AS total_score, AVG(sentiment_score) AS avg_sent
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+        GROUP BY stock_ticker
+    """)
+    stocks = cur.fetchall()
+    stock_preds = []
+    for ticker, total_score, avg_sent in stocks:
+        if total_score is not None and avg_sent is not None:
+            pred = float(model.predict([[total_score, avg_sent]])[0])
+            stock_preds.append((ticker, pred, total_score, avg_sent))
+
+    top_gain_stock = max(stock_preds, key=lambda x: x[1], default=None)
+    top_lose_stock = min(stock_preds, key=lambda x: x[1], default=None)
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "state": qqq_pred,
+        "top_gain_sec": {
+            "sector": top_gain_sec[0],
+            "prediction": top_gain_sec[1],
+            "score": top_gain_sec[2],
+            "avg_sentiment": top_gain_sec[3]
+        } if top_gain_sec else None,
+        "top_gain_stock": {
+            "ticker": top_gain_stock[0],
+            "prediction": top_gain_stock[1],
+            "score": top_gain_stock[2],
+            "avg_sentiment": top_gain_stock[3]
+        } if top_gain_stock else None,
+        "top_lose_sec": {
+            "sector": top_lose_sec[0],
+            "prediction": top_lose_sec[1],
+            "score": top_lose_sec[2],
+            "avg_sentiment": top_lose_sec[3]
+        } if top_lose_sec else None,
+        "top_lose_stock": {
+            "ticker": top_lose_stock[0],
+            "prediction": top_lose_stock[1],
+            "score": top_lose_stock[2],
+            "avg_sentiment": top_lose_stock[3]
+        } if top_lose_stock else None,
+    })
+
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
+
