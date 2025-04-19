@@ -10,3 +10,10 @@
 ⭐️Price Prediction Engine: Combines sentiment signals with historical price data to forecast short-term stock price movement.<br>
 
 ⭐️Fully Automated Pipeline: From data collection to prediction, the entire process runs without manual input, updating as fast as the internet does.
+
+## How we built it
+- Used machine learning algorithm Gradient Boosting Regression Trees to predict the price change of the stock
+- AWS RDS with PostgreSQL for data storage
+- Automate data collection from news websites using Gemma3 LLM
+- Typescript, React and Vite for front end
+- Python and Flask for back end
