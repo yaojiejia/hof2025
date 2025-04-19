@@ -4,7 +4,6 @@ import Card from "./Components/Card";
 import Heatmap from "./Components/Heatmap";
 import Graph from "./Components/Graph";
 import { useEffect, useState } from "react";
-import historical from "node_modules/yahoo-finance2/dist/esm/src/modules/historical";
 
 export async function loader({ params }: Route.LoaderArgs) {
     const id = params.id
