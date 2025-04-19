@@ -104,6 +104,49 @@ def predict_today():
     })
 
 
+@app.route('/predict_ticker', methods=['GET'])
+def predict_ticker():
+
+    ticker_param = request.args.get("ticker")
+
+    if not ticker_param:
+        return jsonify({"error": "Please provide a ticker. Example: /predict_ticker?ticker=AAPL"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT
+            SUM(score) AS total_score,
+            AVG(sentiment_score) AS avg_sentiment
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE AND stock_ticker = %s;
+    """
+    cur.execute(query, (ticker_param.upper(),))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    total_score = result[0]
+    avg_sentiment = result[1]
+
+    if total_score is None or avg_sentiment is None:
+        return jsonify({
+            "ticker": ticker_param.upper(),
+            "message": "no information for this ticker today"
+        }), 200
+
+    x_new = [[total_score, avg_sentiment]]
+    prediction = model.predict(x_new)[0]
+
+    return jsonify({
+        "ticker": ticker_param.upper(),
+        "total_score": total_score,
+        "avg_sentiment": float(avg_sentiment),
+        "prediction": float(prediction)
+    })
+
+
 
 # @app.route('/predict_ticker', methods=['GET'])
 # def get_ticker():
