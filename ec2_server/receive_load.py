@@ -318,16 +318,14 @@ def market_summary():
 @app.route('/predict_ticker_price', methods=['GET'])
 def predict_ticker_price():
     ticker_param = request.args.get("ticker")
-
     if not ticker_param:
         return jsonify({"error": "Please provide a ticker. Example: /predict_ticker_price?ticker=AAPL"}), 400
 
     ticker_upper = ticker_param.upper()
 
-    # 1. Get Reddit sentiment summary from DB
+    # 1. Get Reddit sentiment data
     conn = get_db_connection()
     cur = conn.cursor()
-
     cur.execute("""
         SELECT SUM(score), AVG(sentiment_score)
         FROM reddit_comments
@@ -347,44 +345,34 @@ def predict_ticker_price():
             "message": "No Reddit sentiment data available for this ticker yesterday"
         }), 200
 
-    # 2. Predict next-day price movement using your model
+    # 2. Predict change
     x_new = [[total_score, avg_sentiment]]
     predicted_change = float(model.predict(x_new)[0])
 
-    # 3. Fetch past 4 days of actual prices using yfinance
+    # 3. Get last 4 closing prices
     try:
         ticker = yf.Ticker(ticker_upper)
         end = datetime.today()
         start = end - timedelta(days=7)
         hist = ticker.history(start=start, end=end)
+        closes = hist["Close"].tail(4)
 
-        last_4_closes = hist["Close"].tail(4)
-        price_dict = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in last_4_closes.items()}
+        if closes.empty:
+            return jsonify({"ticker": ticker_upper, "message": "Could not fetch historical prices"}), 500
 
-        if last_4_closes.empty:
-            return jsonify({
-                "ticker": ticker_upper,
-                "message": "Could not fetch historical prices"
-            }), 500
-
-        latest_price = float(last_4_closes.iloc[-1])
+        price_dict = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in closes.items()}
+        latest_price = float(closes.iloc[-1])
         expected_price = round(latest_price + predicted_change, 2)
-        percent_change = round((predicted_change / latest_price) * 100, 4)
 
     except Exception as e:
         return jsonify({"error": f"Failed to fetch market data: {str(e)}"}), 500
 
-    # 4. Return combined result
+    # 4. Minimal response
     return jsonify({
-        "ticker": ticker_upper,
         "last_4_days_closing": price_dict,
-        "latest_closing_price": round(latest_price, 2),
-        "predicted_change": round(predicted_change, 4),
-        "expected_next_day_price": expected_price,
-        "percent_change_prediction": percent_change,
-        "total_score": total_score,
-        "avg_sentiment": float(avg_sentiment)
+        "expected_next_day_price": expected_price
     })
+
 
 
 if __name__ == '__main__':
