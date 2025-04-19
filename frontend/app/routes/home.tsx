@@ -2,6 +2,7 @@ import type { Route } from "./+types/home";
 import './home.css';
 import Card from "./Components/Card";
 import { homeData } from "./data";
+import HeatMap from "./Components/Heatmap";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,8 +19,8 @@ export default function Home() {
     </div>
     <Card>
       <div className="market-entries">
-        { homeData.marketSummary.map(({ name, value }: {name: string; value: string;}) => {
-          return <div className="market-entry">
+        { homeData.marketSummary.map(({ name, value }: {name: string; value: string;}, index: number) => {
+          return <div className="market-entry" key={index}>
             <p> {name} </p>
             <h2> {value} </h2>
           </div>
@@ -32,7 +33,7 @@ export default function Home() {
       <h1> Heatmap </h1>
     </div>
     <Card>
-      Heatmap...
+      <HeatMap />
     </Card>
 
     {/* Predictions */}

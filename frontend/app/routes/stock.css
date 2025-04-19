@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+.cards-container {
+    width: 80%;
+    margin-left: 10%;
+}

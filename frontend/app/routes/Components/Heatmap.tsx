@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
+import './Heatmap.css';
+import Tooltip from './Tooltip';
 
 const mockData = {
   name: 'Market',
@@ -31,10 +33,33 @@ const mockData = {
 
 const Heatmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [ windowChanged, setWindowChanged ] = useState(0);
 
+  // tooltip state
+  const [ tooltipVisible, setTooltipVisible ] = useState(false);
+  const [ tooltipContent, setTooltipContent ] = useState(<p> Tooltip Content </p>);
+
+  // on browser resize: rerun heatmap dimensions useEffect
   useEffect(() => {
-    const width = 960;
-    const height = 600;
+    const handleResize = () => {
+      setWindowChanged( (windowChanged) => windowChanged + 1 );
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // build heatmap dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // calculate heatmap container's width & height (absolute px)
+    const parentElement = containerRef.current.parentElement;
+    if (!parentElement) return;
+    const width = parentElement.getBoundingClientRect().width - 40;
+    const height = width * 0.6;
 
     const color = d3.scaleLinear<string>()
       .domain([-5, 0, 5])
@@ -67,8 +92,6 @@ const Heatmap = () => {
       .style('width', d => `${d.x1 - d.x0}px`)
       .style('height', d => `${d.y1 - d.y0}px`)
       .style('box-sizing', 'border-box')
-      .style('border', '2px solid #333') // Add a border around sectors
-      .style('background-color', 'rgba(0, 0, 0, 0.1)') // Light background for sectors
       .style('overflow', 'hidden')
       .classed('flex flex-col', true); // Use flexbox for layout
 
@@ -76,11 +99,10 @@ const Heatmap = () => {
     sectors
       .append('div')
       .classed('sector-label', true)
-      .style('padding', '4px')
+      .style('padding', '12px')
       .style('font-weight', 'bold')
       .style('font-size', '14px')
       .style('color', 'white')
-      .style('background-color', '#444') // Darker background for labels
       .text(d => d.data.name);
 
     // Add stock nodes within each sector
@@ -94,16 +116,34 @@ const Heatmap = () => {
       .style('top', d => `${d.y0 - d.parent!.y0}px`) // Relative to the sector
       .style('width', d => `${d.x1 - d.x0}px`)
       .style('height', d => `${d.y1 - d.y0}px`)
-      .style('background', d => color(d.data.change))
+      .style('background', d => getColor(d.data.change))
       .style('box-sizing', 'border-box')
       .style('overflow', 'hidden')
       .style('color', 'white')
       .style('font-size', '12px')
       .classed('flex justify-center items-center', true)
-      .text(d => `${d.data.name} (${d.data.change}%)`);
-  }, []);
+      .text(d => `${d.data.name} (${d.data.change}%)`)
+      .on('mouseenter', (event, d) => {
+        setTooltipContent(<p> {d.data.name}: {d.data.change}%</p>);
+        setTooltipVisible(true);
+      })
+      .on('mouseleave', () => {
+        setTooltipVisible(false);
+      });
+  }, [windowChanged]);
 
-  return <div ref={containerRef} />;
+  return <div>
+    <div ref={containerRef} />
+    <Tooltip visible={tooltipVisible} content={tooltipContent} />
+  </div>;
 };
+
+function getColor(change: number) {
+  const opacity = Math.abs(change) / 9;
+  
+  if (change > 0) return `rgba(106, 206, 98, ${opacity})`;
+  if (change < 0) return `rgba(247, 66, 75, ${opacity})`;
+  return 'black';
+}
 
 export default Heatmap;

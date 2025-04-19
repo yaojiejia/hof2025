@@ -16,7 +16,7 @@ body {
 
 @font-face {
   font-family: "Inter";
-  src: url("./Inter-Light.ttf");
+  src: url("/Inter-Light.ttf");
 }
 
 * {

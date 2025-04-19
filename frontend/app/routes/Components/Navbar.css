@@ -1,9 +1,10 @@
+@import "tailwindcss";
+
 .navbar {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     padding: 1.8rem 2rem;
-    background-color: #ffffff33;
 }
 
 .navbar-button {
@@ -16,7 +17,7 @@
 .navbar-input {
     background-color: rgba(0, 0, 0, 0.3);
     padding: 0.5rem 1rem;
-    border-radius: 2rem;
+    border-radius: 0.2rem;
 }
 
 .home-button {
