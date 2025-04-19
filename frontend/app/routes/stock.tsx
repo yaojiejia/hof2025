@@ -1,6 +1,7 @@
 import { useParams } from "react-router";
 import Card from "./Components/Card";
 import { useEffect, useState } from "react";
+import Graph from "./Components/Graph";
 
 // Define inline types instead of importing them
 interface LoaderArgs {
@@ -15,12 +16,13 @@ interface StockData {
   id: string;
   currentPrice: number;
   pred: {
-    nextDay: number;
+    nextDate: string;
+    nextPrice: number;
     change: number;
     percentChange: number;
   };
   market_sentiment: number;
-  
+  historical_data: Array<Object>;
 }
 
 interface ComponentProps {
@@ -34,17 +36,33 @@ export async function loader({ params }: LoaderArgs) {
     const data = await predictRes.json()
     const lastClosingEntry = Object.entries(data.last_4_days_closing).at(-1); // Use .at(-1) for the last element
     const [lastDate, lastPrice] = lastClosingEntry || ["", 0]; // Destructure the date and price
+    const nextDate = new Date(new Date(lastDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    const historical_data = Object.entries(data.last_4_days_closing).map(([date, close]) => ({date, close}))
+    const full_graph = [...historical_data]
+    full_graph.push(
+        {
+            date: nextDate,
+            close: data.expected_next_day_price,
+            predicted: true
+        })
+
     const res = {
       name: data.company_name,
       id: data.ticker,
       currentPrice: Number(lastPrice), // Ensure this is a number
       pred: {
-        nextDay: data.expected_next_day_price,
+        // next day after lastday
+        nextDate: nextDate,
+        nextPrice: data.expected_next_day_price,
         change: data.prediction,
         percentChange: ((data.expected_next_day_price - data.latest_closing_price) / data.latest_closing_price) * 100,
       },
       market_sentiment: data.avg_sentiment,
+      historical_data: historical_data,
+      full_graph: full_graph
     };
+    console.log(res)
     return res
   } catch (error) {
     console.error(error)
@@ -80,6 +98,9 @@ export default function Stock({ loaderData }: ComponentProps) {
           </Card>
         </div>
         <div className="pt-5">
+            <Card>
+                <Graph data={data.full_graph} />
+            </Card>
         </div>
       </div>
     </>
