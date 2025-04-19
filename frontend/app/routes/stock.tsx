@@ -2,6 +2,7 @@ import { useParams } from "react-router";
 import Card from "./Components/Card";
 import { useEffect, useState } from "react";
 import Graph from "./Components/Graph";
+import "./stock.css";
 
 // Define inline types instead of importing them
 interface LoaderArgs {
