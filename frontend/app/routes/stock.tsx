@@ -12,11 +12,14 @@ export async function loader({ params }: Route.LoaderArgs) {
         const predictRes = await fetch(`http://3.145.78.241:5000/predict_ticker_price?ticker=${id}`)
         const data = await predictRes.json()
         console.log(data)
-        
+
+        const lastClosingEntry = Object.entries(data.last_4_days_closing).at(-1); // Use .at(-1) for the last element
+        const [lastDate, lastPrice] = lastClosingEntry || []; // Destructure the date and price
+
         const res = {
             name: data.company_name,
             id: data.ticker,
-            price: data.latest_closing_price,
+            price: lastClosingEntry,
             pred: {
                 nextDay: data.expected_next_day_price,
                 change: data.prediction,
