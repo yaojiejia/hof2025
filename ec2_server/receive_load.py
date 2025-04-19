@@ -97,9 +97,9 @@ def summary_today():
     })
 
 
-@app.route('/predict_ticker', methods=['GET'])
-def get_ticker():
-     pass
+# @app.route('/predict_ticker', methods=['GET'])
+# def get_ticker():
+#      pass
 @app.route('/get_overall_ticker', methods=['GET'])
 def get_overall_ticker():
     ticker_symbol = request.args.get('ticker')
@@ -128,13 +128,13 @@ def get_overall_ticker():
 
 
 
-@app.route('/predict_QQQ', method=['GET'])
-def get_QQQ():
-    pass 
+# @app.route('/predict_QQQ', method=['GET'])
+# def get_QQQ():
+#     pass 
 
-@app.route('/get_QQQ', method=['GET'])
-def get_sector():
-    pass
+# @app.route('/get_QQQ', method=['GET'])
+# def get_sector():
+#     pass
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
