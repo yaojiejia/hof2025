@@ -1,8 +1,10 @@
 import yfinance as yf
 from datetime import datetime, timedelta
 from dateutil import parser as dateparser
+import time
 
 def get_prices_around_time(comment_time_raw):
+    time.sleep(1)
     try:
         # Handle both string and datetime input
         if isinstance(comment_time_raw, str):
