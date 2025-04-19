@@ -87,8 +87,6 @@ const Heatmap = () => {
       .style('width', d => `${d.x1 - d.x0}px`)
       .style('height', d => `${d.y1 - d.y0}px`)
       .style('box-sizing', 'border-box')
-      .style('border', '2px solid #333') // Add a border around sectors
-      .style('background-color', 'rgba(0, 0, 0, 0.1)') // Light background for sectors
       .style('overflow', 'hidden')
       .classed('flex flex-col', true); // Use flexbox for layout
 
@@ -100,7 +98,6 @@ const Heatmap = () => {
       .style('font-weight', 'bold')
       .style('font-size', '14px')
       .style('color', 'white')
-      .style('background-color', 'transparent') // Darker background for labels
       .text(d => d.data.name);
 
     // Add stock nodes within each sector
