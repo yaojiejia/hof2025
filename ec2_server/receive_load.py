@@ -5,7 +5,10 @@ import dotenv
 import helper
 import yfinance as yf
 from datetime import datetime, timedelta
+import joblib
+
 dotenv.load_dotenv()
+model = joblib.load('gbt_model.pkl')
 
 app = Flask(__name__)
 
@@ -71,14 +74,13 @@ def get_historic_data():
 
     return jsonify(data)
 
-@app.route('/summary_today', methods=['GET'])
-def summary_today():
+@app.route('/predict_today', methods=['GET'])
+def predict_today():
     conn = get_db_connection()
     cur = conn.cursor()
 
     query = """
         SELECT
-            COUNT(*) AS comment_count,
             SUM(score) AS total_score,
             AVG(sentiment_score) AS avg_sentiment
         FROM reddit_comments
@@ -86,15 +88,21 @@ def summary_today():
     """
     cur.execute(query)
     result = cur.fetchone()
-
     cur.close()
     conn.close()
 
+    total_score = result[0] or 0
+    avg_sentiment = float(result[1]) if result[1] is not None else 0
+
+    x_new = [[total_score, avg_sentiment]]
+    prediction = model.predict(x_new)[0]
+
     return jsonify({
-        "comment_count": result[0],
-        "total_score": result[1],
-        "avg_sentiment": float(result[2]) if result[2] is not None else None
+        "total_score": total_score,
+        "avg_sentiment": avg_sentiment,
+        "prediction": float(prediction)
     })
+
 
 
 # @app.route('/predict_ticker', methods=['GET'])
@@ -124,8 +132,6 @@ def get_overall_ticker():
         })
     except Exception as e:
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
-
-
 
 
 # @app.route('/predict_QQQ', method=['GET'])
