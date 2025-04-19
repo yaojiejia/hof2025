@@ -89,7 +89,7 @@ export default function Stock({ loaderData }: ComponentProps) {
           <Card className="w-60 h-20">
             <p className="text-sm">Predicted Price</p>
             <div>
-              ${data.pred.nextDay?.toFixed(2)}
+              ${data.pred.nextPrice?.toFixed(2)}
               <span className={data.pred.change > 0 ? "text-green-500" : "text-red-500"}>
                 {data.pred.change > 0 ? " +" : " "}{data.pred.percentChange?.toFixed(2)}%
               </span>
