@@ -1,6 +1,8 @@
 import type { Route } from "./+types/home";
 import './home.css';
 
+import { homeData } from "./data";
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "New React Router App" },
@@ -9,5 +11,14 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <div> wefwefwefwef </div>;
+  return <div className="home">
+    {/* Market Summary */}
+    <div className="home-title">
+      <h1> Market Summary </h1>
+    </div>
+    <div className="home-section">
+      <div className="market-entries">
+      </div>
+    </div>
+  </div>;
 }

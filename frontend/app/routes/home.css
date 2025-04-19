@@ -2,3 +2,28 @@ body {
     background-color: #151515;
     min-height: 100vh;
 }
+
+.home {
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-title {
+    margin-top: 1.8rem;
+    margin-bottom: 0.8rem;
+    width: 90%;
+    padding-left: 0.7rem;
+}
+.home-title > h1 {
+    font-size: 1.3rem;
+}
+
+.home-section {
+    background-color: #2B2B2B;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    width: 90%;
+}
