@@ -46,5 +46,23 @@ def submit_data():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/gethistoricdata', methods=['GET'])
+def get_historic_data():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    query = "SELECT * FROM reddit_comments"
+    cur.execute(query)
+    rows = cur.fetchall()
+
+    colnames = [desc[0] for desc in cur.description]
+
+    data = [dict(zip(colnames, row)) for row in rows]
+
+    cur.close()
+    conn.close()
+
+    return jsonify(data)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
