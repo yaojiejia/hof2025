@@ -74,81 +74,6 @@ def get_historic_data():
 
     return jsonify(data)
 
-# @app.route('/predict_today', methods=['GET'])
-# def predict_today():
-#     conn = get_db_connection()
-#     cur = conn.cursor()
-
-#     query = """
-#         SELECT
-#             SUM(score) AS total_score,
-#             AVG(sentiment_score) AS avg_sentiment
-#         FROM reddit_comments
-#         WHERE time::date = CURRENT_DATE - INTERVAL '1 day';
-#     """
-#     cur.execute(query)
-#     result = cur.fetchone()
-#     cur.close()
-#     conn.close()
-
-#     total_score = result[0] or 0
-#     avg_sentiment = float(result[1]) if result[1] is not None else 0
-
-#     x_new = [[total_score, avg_sentiment]]
-#     prediction = model.predict(x_new)[0]
-
-#     return jsonify({
-#         "total_score": total_score,
-#         "avg_sentiment": avg_sentiment,
-#         "prediction": float(prediction)
-#     })
-
-
-@app.route('/predict_ticker', methods=['GET'])
-def predict_ticker():
-
-    ticker_param = request.args.get("ticker")
-
-    if not ticker_param:
-        return jsonify({"error": "Please provide a ticker. Example: /predict_ticker?ticker=AAPL"}), 400
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    query = """
-        SELECT
-            SUM(score) AS total_score,
-            AVG(sentiment_score) AS avg_sentiment
-        FROM reddit_comments
-        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
-          AND stock_ticker = %s;
-    """
-    cur.execute(query, (ticker_param.upper(),))
-    result = cur.fetchone()
-    cur.close()
-    conn.close()
-
-    total_score = result[0]
-    avg_sentiment = result[1]
-
-    if total_score is None or avg_sentiment is None:
-        return jsonify({
-            "ticker": ticker_param.upper(),
-            "message": "no information for this ticker today"
-        }), 200
-
-    x_new = [[total_score, avg_sentiment]]
-    prediction = model.predict(x_new)[0]
-
-    return jsonify({
-        "ticker": ticker_param.upper(),
-        "total_score": total_score,
-        "avg_sentiment": float(avg_sentiment),
-        "prediction": float(prediction)
-    })
-
-
-
 
 @app.route('/predict_sector', methods=['GET'])
 def predict_sector():
@@ -324,7 +249,7 @@ def predict_ticker_price():
     x_new = [[total_score, avg_sentiment]]
     predicted_change = float(model.predict(x_new)[0])
 
-    # 3. Get last 4 closing prices + company name
+    # 3. Get stock info and price history
     try:
         ticker_obj = yf.Ticker(ticker_upper)
         info = ticker_obj.info
@@ -336,7 +261,10 @@ def predict_ticker_price():
         closes = hist["Close"].tail(4)
 
         if closes.empty:
-            return jsonify({"ticker": ticker_upper, "message": "Could not fetch historical prices"}), 500
+            return jsonify({
+                "ticker": ticker_upper,
+                "message": "Could not fetch historical prices"
+            }), 500
 
         price_dict = {date.strftime("%Y-%m-%d"): round(price, 2) for date, price in closes.items()}
         latest_price = float(closes.iloc[-1])
@@ -345,13 +273,18 @@ def predict_ticker_price():
     except Exception as e:
         return jsonify({"error": f"Failed to fetch market data: {str(e)}"}), 500
 
-    # 4. Response
+    # 4. Combined Response
     return jsonify({
         "ticker": ticker_upper,
         "company_name": company_name,
-        "last_4_days_closing": price_dict,
-        "expected_next_day_price": expected_price
+        "total_score": total_score,
+        "avg_sentiment": float(avg_sentiment),
+        "prediction": predicted_change,
+        "latest_closing_price": round(latest_price, 2),
+        "expected_next_day_price": expected_price,
+        "last_4_days_closing": price_dict
     })
+
 
 @app.route('/predict_market_price', methods=['GET'])
 def predict_market_price():
