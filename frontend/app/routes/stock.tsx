@@ -5,7 +5,8 @@ export default function Stock() {
     const { id } = useParams();
     return (
         <div>
-            hi
+            hi 
+            {id}
         </div>
     )
 }
