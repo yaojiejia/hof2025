@@ -2,5 +2,5 @@
 
 .sector-label {
     z-index: 1;
-    background-color: #2B2B2B;
+    background-color: var(--color-gray-800);
 }
