@@ -75,7 +75,7 @@ export default function Stock({ loaderData }: Route.ComponentProps) {
             </div>
             <div className="pt-20">
                 <Card className="">
-                    <Graph data={data.graph.historical_data} />
+                    {/* <Graph data={data.graph.historical_data} /> */}
                 </Card>
             </div>
         </div>
