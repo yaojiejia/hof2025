@@ -1,5 +1,7 @@
 import type { Route } from "./+types/stock";
 import { useParams } from "react-router";
+import Card from "./Components/Card";
+import Heatmap from "./Components/Heatmap";
 
 export async function loader({ params }: Route.LoaderArgs) {
     return params;
@@ -12,6 +14,10 @@ export default function Stock({ loaderData }: Route.ComponentProps) {
         <div>
             hi 
             {id}
+            <Card>Content
+            <Heatmap />
+
+            </Card>
         </div>
     )
 }
