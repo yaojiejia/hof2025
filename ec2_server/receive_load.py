@@ -178,13 +178,49 @@ def get_overall_ticker():
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 
-# @app.route('/predict_QQQ', method=['GET'])
-# def get_QQQ():
-#     pass 
+@app.route('/predict_sector', methods=['GET'])
+def predict_sector():
 
-# @app.route('/get_QQQ', method=['GET'])
-# def get_sector():
-#     pass
+    sector_param = request.args.get("sector")
+
+    if not sector_param:
+        return jsonify({"error": "Please provide a sector. Example: /predict_sector?sector=Technology"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT
+            SUM(score) AS total_score,
+            AVG(sentiment_score) AS avg_sentiment
+        FROM reddit_comments
+        WHERE time::date = CURRENT_DATE - INTERVAL '1 day'
+          AND sector = %s;
+    """
+    cur.execute(query, (sector_param,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    total_score = result[0]
+    avg_sentiment = result[1]
+
+    if total_score is None or avg_sentiment is None:
+        return jsonify({
+            "sector": sector_param,
+            "message": "no information for this sector yesterday"
+        }), 200
+
+    x_new = [[total_score, avg_sentiment]]
+    prediction = model.predict(x_new)[0]
+
+    return jsonify({
+        "sector": sector_param,
+        "total_score": total_score,
+        "avg_sentiment": float(avg_sentiment),
+        "prediction": float(prediction)
+    })
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
