@@ -1,11 +1,16 @@
 import yfinance as yf
 from datetime import datetime, timedelta
+from dateutil import parser as dateparser
 
-def get_prices_around_time(comment_time_str):
+def get_prices_around_time(comment_time_raw):
     try:
-        comment_time = datetime.strptime(comment_time_str, "%a, %d %b %Y %H:%M:%S %Z")
+        # Handle both string and datetime input
+        if isinstance(comment_time_raw, str):
+            comment_time = dateparser.parse(comment_time_raw)
+        else:
+            comment_time = comment_time_raw
 
-        ticker = yf.Ticker("QQQ")  
+        ticker = yf.Ticker("QQQ")  # Or use "^IXIC"
         history = ticker.history(
             start=comment_time - timedelta(days=3),
             end=comment_time + timedelta(days=3)
