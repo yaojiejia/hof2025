@@ -9,7 +9,7 @@ type PricePoint = {
   };
 
 
-  const Graph: React.FC<{ data: PricePoint[] }> = ({ data }) => {
+const Graph: React.FC<{ data: PricePoint[] }> = ({ data }) => {
     const ref = useRef<SVGSVGElement>(null);
   
     useEffect(() => {
@@ -93,3 +93,5 @@ type PricePoint = {
   
     return <svg ref={ref} width={500} height={300}></svg>;
   };
+
+  export default Graph;
