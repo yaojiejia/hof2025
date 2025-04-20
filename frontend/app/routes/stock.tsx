@@ -2,7 +2,10 @@ import { useParams } from "react-router";
 import Card from "./Components/Card";
 import { useEffect, useState } from "react";
 import Graph from "./Components/Graph";
+import SharedErrorBoundary from "./Components/Error";
 import "./stock.css";
+
+export const ErrorBoundary = SharedErrorBoundary
 
 // Define inline types instead of importing them
 interface LoaderArgs {
@@ -65,6 +68,7 @@ export async function loader({ params }: LoaderArgs) {
     };
     return res
   } catch (error) {
+    
     console.error(error)
     throw error; // Make sure errors are properly propagated
   }
@@ -79,7 +83,7 @@ export default function Stock({ loaderData }: ComponentProps) {
         <strong>{data.name}</strong> {data.id.toUpperCase()}
       </div>
       <div className="cards-container">
-        <div className="pt-6 flex justify-center gap-70">
+        <div className="pt-6 flex justify-start gap-70">
           <Card className="w-60 h-20">
             <p className="text-sm">Current Price</p>
             <div>

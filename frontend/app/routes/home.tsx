@@ -5,6 +5,7 @@ import { homeData } from "./data";
 import HeatMap from "./Components/Heatmap";
 import Graph from "./Components/Graph";
 
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "New React Router App" },

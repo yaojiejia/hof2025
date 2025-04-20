@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import './Heatmap.css';
 import Tooltip from './Tooltip';
+import { useNavigate } from 'react-router';
 
 const mockData = {
   name: 'Market',
@@ -32,6 +33,7 @@ const mockData = {
 };
 
 const Heatmap = () => {
+  const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null);
   const [ windowChanged, setWindowChanged ] = useState(0);
 
@@ -127,8 +129,11 @@ const Heatmap = () => {
         setTooltipContent(<p> {d.data.name}: {d.data.change}%</p>);
         setTooltipVisible(true);
       })
-      .on('mouseleave', () => {
+      .on('mousel eave', () => {
         setTooltipVisible(false);
+      })
+      .on('click', (event, d) => {
+        navigate(`/stock/${d.data.name}`)
       });
   }, [windowChanged]);
 
